@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd 
 import seaborn as sns
-import matplotlib.pyplot as plt # side-stepping mpl backend
+import matplotlib.pyplot as plt 
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from sklearn.preprocessing import StandardScaler
@@ -69,6 +69,37 @@ class App:
                 st.write("ERROR: File not found")
                 raise FileNotFoundError
             
+
+    def preprocess_data(self):
+        if self.dataset_name == "Breast Cancer":
+            if 'id' in self.df.columns:
+                self.df.drop("id", axis=1, inplace=True)     
+
+            self.df.dropna(axis=1, how='all', inplace=True)
+
+            for column in self.df.columns:
+                if pd.api.types.is_numeric_dtype(self.df[column].dtype):
+                    mean_value = self.df[column].mean()
+                    self.df[column].fillna(mean_value, inplace=True)
+
+  
+            self.df['diagnosis'] = self.df['diagnosis'].map({'M':1, 'B':0})
+            self.X = self.df.drop("diagnosis", axis = 1)
+            self.Y = self.df['diagnosis']
+
+            st.subheader("After Preprocessing:")
+            st.write(self.df.tail(10))
+            st.write(f"Shape of dataset: {self.df.shape}")
+
+
+            scaler = StandardScaler()
+            self.X = scaler.fit_transform(self.X)
+
+            self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.X, self.Y, test_size = 0.2, random_state = 101)
+
+            st.write(f"X_train: {self.X_train.shape}, X_test: {self.X_test.shape}, Y_train: {self.Y_train.shape}, Y_test: {self.Y_test.shape}")
+
+
     def _get_classifier(self):
     
         if self.classifier_name == 'KNN':
@@ -138,36 +169,6 @@ class App:
         except:
             st.warning('Please select a dataset and classifier, and make sure the model is trained.')
 
-
-
-    def preprocess_data(self):
-        if self.dataset_name == "Breast Cancer":
-            if 'id' in self.df.columns:
-                self.df.drop("id", axis=1, inplace=True)     
-
-            self.df.dropna(axis=1, how='all', inplace=True)
-
-            for column in self.df.columns:
-                if pd.api.types.is_numeric_dtype(self.df[column].dtype):
-                    mean_value = self.df[column].mean()
-                    self.df[column].fillna(mean_value, inplace=True)
-
-  
-            self.df['diagnosis'] = self.df['diagnosis'].map({'M':1, 'B':0})
-            self.X = self.df.drop("diagnosis", axis = 1)
-            self.Y = self.df['diagnosis']
-
-            st.subheader("After Preprocessing:")
-            st.write(self.df.tail(10))
-            st.write(f"Shape of dataset: {self.df.shape}")
-
-
-            scaler = StandardScaler()
-            self.X = scaler.fit_transform(self.X)
-
-            self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.X, self.Y, test_size = 0.2, random_state = 101)
-
-            st.write(f"X_train: {self.X_train.shape}, X_test: {self.X_test.shape}, Y_train: {self.Y_train.shape}, Y_test: {self.Y_test.shape}")
 
     def _plot_conf_matrix(self, conf_matrix):
 
